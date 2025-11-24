@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
+
+interface IEtherStore {
+
+    function deposit() external payable;
+
+    function withdraw(uint256 _amount) external;
+
+    function getBalance() external view returns(uint256);
+}
