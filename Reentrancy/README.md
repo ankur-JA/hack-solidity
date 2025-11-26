@@ -1,66 +1,115 @@
-## Foundry
+## Reentrancy
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Contract A       ------------>       Contract B
+    |                                     |
+    |_____________________________________|
 
-Foundry consists of:
+### Contract - A(3 Ether)
+### Contract - B(0 Ether)
+### EOA - (1 Ether)
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+##### frame-0: EOA -----> B.attack()
+- msg.sender = EOA
+- msg.Value = 1 Ether
+- Check msg.value > 0
+- Call A.deposit()
+- Call A.withdraw(1 ether)
+- completed
+- popped
 
-## Documentation
+#### frame-1: B.attack() -----> A.deposit()     // This is completed and removed from the call stack 
+- msg.sender = address(B)
+- msg.value = 1 ether
+- update's the state variable balanace[msg.sender] = 1 ether;
+- address(A).balance = 4 ether it get updated
+- popped out
 
-https://book.getfoundry.sh/
+#### frame-1: B.attack() -----> A.Withdraw()
+- msg.sender = B
+- msg.value = 1 ether
+- check balance[msg.sender] >= 1 ether
+- send ETH to B.fallback
+- pending 
+- success = true
+- balance[msg.sender] -= 1 ==> 2**256 - 3
+- completed
+- popped
 
-## Usage
+#### frame-2: A.withdraw() ------> B.fallback()
+- msg.sender = A
+- msg.value = 1 ether
+- address(A).balance = 3 ether
+- address(B).balance = 1 ether
+- check address(A).balance >= 1 ether = true
+- call --- A.withdraw 
+- pending
+- completed
+- popped
 
-### Build
+#### frame-3: B.fallback() ----> A.withdraw()
+- msg.sender = B
+- msg.value = 1 ether
+- check balance[msg.sender] >= 1 ether  = true
+- send ETH to B.fallback()
+- pending
+- success = true
+- balance[msg.sender] -= 1 (2**256 - 2)
+- completed
+- popped
 
-```shell
-$ forge build
-```
+#### frame-4: A.withdraw() -----> B.fallback()
+- msg.sender = A
+- msg.value = 1 ether
+- address(A).balance = 2 ether
+- address(B).balance = 2 ether
+- check address(A).balance >= 1 ether = true
+- call A.Withdraw()
+- pending
+- completed
+- popped
 
-### Test
+#### frame-5: B.fallback() ---------> A.withdraw()
+- msg.sender  = B
+- msg.value = 1 ether
+- check balance[msg.sender] >= 1 ether = true
+- send ETH to B.fallback()
+- pending
+- succes = true
+- balance[msg.sender] -= 1 >>> 0 - 1 (Uint underflow)  ----> if it unchecked it will wraped around be +ve interger(2**256 - 1)
+- completed
+- popped
 
-```shell
-$ forge test
-```
 
-### Format
+#### frame-6: A.withdraw() --------> B.fallback()
+- msg.sender = A
+- msg.value = 1 ether
+- address(A).balance = 1 ether
+- address(B).balance = 3 ether
+- check addresss(A).balance >= 1 ether = true
+- call A.withdraw()
+- pending
+- completed
+- popped
 
-```shell
-$ forge fmt
-```
 
-### Gas Snapshots
+#### frame-7:  B.fallback() ------> A.withdraw()
+- msg.sender = B
+- msg.value = 1 ether
+- check balance[msg.sender] >= 1 ether = true
+- send ETH B.fallback()
+- pending
+- success = true
+- balance[msg.sender] -= 1 -------> balance[msg.sender] = 0
+- completed
+- popped
 
-```shell
-$ forge snapshot
-```
 
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+#### frame-8: A.withdraw()  ------> B.fallbakc()
+- msg.sender = A
+- msg.value = 1 ether
+- address(A).balance = 0
+- address(B).balance = 4
+- check address(A).balance >= 1 ether = false
+- completed the funciton with no return value (it is void funtion)
+- popped
+    
