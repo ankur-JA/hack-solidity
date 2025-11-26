@@ -113,3 +113,7 @@ Contract A       ------------>       Contract B
 - completed the funciton with no return value (it is void funtion)
 - popped
     
+
+### Preentive Techniques- 
+- Ensure all state change happen before calling exteranl contracts
+- use function modifiers that prevent re-entrancy
