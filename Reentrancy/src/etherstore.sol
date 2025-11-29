@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-contract EtherStore {
+import {ReentrancyGuard} from "./ReeentrancyGuard.sol";
+
+contract EtherStore is ReentrancyGuard {
 
     error InsufficientFund();
 
@@ -11,7 +13,7 @@ contract EtherStore {
         balances[msg.sender] += msg.value;
     }
  
-    function withdraw(uint256 _amount) external {
+    function withdraw(uint256 _amount) external noReentrancy {
         if(balances[msg.sender] < _amount) {
             revert InsufficientFund();
         }
