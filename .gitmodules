@@ -1,3 +1,9 @@
 [submodule "Self-Destruct/lib/forge-std"]
 	path = Self-Destruct/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "DenialOfServiceAttack/lib/forge-std"]
+	path = DenialOfServiceAttack/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "ReadOnlyReentrancy/lib/forge-std"]
+	path = ReadOnlyReentrancy/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
